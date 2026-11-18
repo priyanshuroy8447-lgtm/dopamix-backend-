@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depanix AI - Unlimited Video Studio</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); width: 100%; max-width: 650px; border: 1px solid #334155; }
+        h1 { color: #38bdf8; text-align: center; font-size: 26px; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #94a3b8; font-size: 13px; margin-bottom: 25px; }
+        label { display: block; margin-top: 15px; font-size: 14px; color: #38bdf8; font-weight: 600; }
+        textarea, select { width: 100%; padding: 12px; margin-top: 5px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 150px; resize: vertical; }
+        button { background: #0284c7; color: white; border: none; padding: 14px; width: 100%; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.3s; }
+        button:hover { background: #0369a1; }
+        #statusBox { margin-top: 25px; padding: 15px; background: #0f172a; border-radius: 6px; display: none; border-left: 4px solid #38bdf8; }
+        .progress-bar { width: 100%; background: #334155; border-radius: 4px; overflow: hidden; margin-top: 12px; height: 10px; }
+        .progress-fill { width: 0%; height: 100%; background: #38bdf8; transition: width 0.4s ease; }
+        .result-box { margin-top: 15px; font-size: 14px; line-height: 1.5; color: #cbd5e1; white-space: pre-wrap; background: #090d16; padding: 10px; border-radius: 6px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Depanix Video Studio</h1>
+        <p class="subtitle">Live URL: depanix-backend-4.onrender.com</p>
+        
+        <label>अपनी लंबी स्क्रिप्ट या कहानी दर्ज करें (No Limits):</label>
+        <textarea id="scriptText" placeholder="यहाँ अपनी स्क्रिप्ट लिखें..."></textarea>
+        
+        <label>एनीमेशन स्टाइल चुनें:</label>
+        <select id="animationStyle">
+            <option value="Cinematic 3D Animation">Cinematic 3D Animation</option>
+            <option value="2D Anime Style">2D Anime Style</option>
+            <option value="Realistic Film Style">Realistic Film Style</option>
+            <option value="Mythological Epic 3D">Mythological Epic 3D</option>
+        </select>
+
+        <label>वीडियो का लक्ष्य समय (Minutes):</label>
+        <select id="targetMinutes">
+            <option value="5">5 Minutes</option>
+            <option value="10" selected>10 Minutes</option>
+            <option value="15">15 Minutes</option>
+            <option value="30">30 Minutes</option>
+        </select>
+
+        <button onclick="startGeneration()">मास्टर वीडियो जनरेट करें</button>
+
+        <div id="statusBox">
+            <p id="statusText">प्रोसेसिंग शुरू हो रही है...</p>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div id="resultOutput" class="result-box" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        async function startGeneration() {
+            const scriptText = document.getElementById('scriptText').value;
+            const animationStyle = document.getElementById('animationStyle').value;
+            const targetMinutes = document.getElementById('targetMinutes').value;
+            
+            const statusBox = document.getElementById('statusBox');
+            const statusText = document.getElementById('statusText');
+            const progressFill = document.getElementById('progressFill');
+            const resultOutput = document.getElementById('resultOutput');
+
+            if (!scriptText.trim()) {
+                alert('कृपया पहले स्क्रिप्ट या कहानी लिखें!');
+                return;
+            }
+
+            statusBox.style.display = 'block';
+            resultOutput.style.display = 'none';
+            statusText.textContent = 'सर्वर पर अनुरोध भेजा जा रहा है...';
+            progressFill.style.width = '15%';
+
+            try {
+                const response = await fetch('/api/generate-master-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scriptText, animationStyle, targetMinutes })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    pollJobStatus(data.jobId);
+                } else {
+                    statusText.textContent = 'त्रुटि: ' + data.message;
+                }
+            } catch (err) {
+                statusText.textContent = 'कनेक्शन विफल रहा।';
+                console.error(err);
+            }
+        }
+
+        async function pollJobStatus(jobId) {
+            const statusText = document.getElementById('statusText');
+            const progressFill = document.getElementById('progressFill');
+            const resultOutput = document.getElementById('resultOutput');
+
+            const timer = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/job-status/${jobId}`);
+                    const data = await res.json();
+
+                    if (data.success) {
+                        const job = data.job;
+                        statusText.textContent = job.currentStep;
+                        progressFill.style.width = job.progress + '%';
+
+                        if (job.status === 'COMPLETED') {
+                            clearInterval(timer);
+                            statusText.innerHTML = `✅ वीडियो प्रोडक्शन प्लान तैयार है!<br><a href="${job.finalOutputUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">डाउनलोड मास्टर वीडियो</a>`;
+                            resultOutput.style.display = 'block';
+                            resultOutput.textContent = job.sceneData;
+                        } else if (job.status === 'FAILED') {
+                            clearInterval(timer);
+                            statusText.textContent = '❌ विफल: ' + job.error;
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
