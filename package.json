@@ -1,7 +1,7 @@
 {
-  "name": "dopamix-backend",
-  "version": "2.0.0",
-  "description": "Dopamix Script Unlimited AI Video Generation Backend",
+  "name": "depanix-backend",
+  "version": "latest",
+  "description": "Depanix Professional AI Video Studio",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@google/genai": "latest",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "uuid": "^10.0.0"
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "uuid": "latest"
   }
 }
